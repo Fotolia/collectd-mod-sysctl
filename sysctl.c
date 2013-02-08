@@ -250,8 +250,10 @@ static int config_add_instance(oconfig_item_t *ci)
     oconfig_item_t *child = ci->children + i;
 
     if (strcasecmp ("Key", child->key) == 0)
+    {
       status = cf_util_get_string (child, &st->name);
       status = cf_util_get_int (child, &st->index);
+    }
     else
     {
       WARNING ("sysctl plugin: Option `%s' not allowed here.",
