@@ -17,13 +17,16 @@ static _Bool sysctl_have_instances = 0;
 
 int trim(char *src, char **dstp)
 {
-  size_t len;
-  char *dst = NULL;
+  int inspace = 0;
+  int i = 0, j = 0;
   int ret;
+  char *dst = NULL;
+  ssize_t len = 0;
 
+  /* sanity check */
   if (! src)
     {
-      ret = -2;
+      ret = -1;
       goto end;
     }
 
@@ -31,23 +34,45 @@ int trim(char *src, char **dstp)
   while (src && *src && isspace(*src))
     src++;
 
-  // remove trailing spaces
   len = strlen(src);
+
   while (isspace(src[len - 1]))
     len--;
 
   dst = malloc(len + 1);
   if (! dst)
     {
-      ret = -1;
-      // log?
+      ret = -2;
       goto end;
     }
 
-  strncpy(dst, src, len);
-  dst[len] = 0;
+  while (i < len)
+    {
+      if (inspace)
+        {
+          while (src[i] && isspace(src[i]))
+            i++;
 
+          inspace = 0;
+        }
+      else
+        {
+          if (isspace(src[i]))
+            {
+              inspace = 1;
+              dst[j++] = ' ';
+              i++;
+            }
+          else
+            {
+              dst[j++] = src[i++];
+            }
+        }
+    }
+
+  dst[j] = 0;
   ret = 0;
+
  end:
   if (dstp)
     *dstp = dst;
