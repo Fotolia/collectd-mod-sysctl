@@ -15,40 +15,45 @@
 
 static _Bool sysctl_have_instances = 0;
 
-char *trim(char *src)
+int trim(char *src, char **dstp)
 {
-  int inspace = 0;
-  int i = 0, j = 0, len = strlen(src);
-  char *dst = (char *)malloc(len);
+  size_t len;
+  char *dst = NULL;
+  int ret;
 
-  if (dst == NULL)
-  {
-    WARNING("malloc failed in trim()");
-    return NULL;
-  }
-
-  while (i < len-1)
-  {
-    if (isspace(src[i]))
-      inspace = 1;
-    else
+  if (! src)
     {
-      if (inspace == 1)
-      {
-        dst[j] = ' ';
-        j++;
-        inspace = 0;
-      }
-      dst[j] = src[i];
-      j++;
+      ret = -2;
+      goto end;
     }
-    i++;
-  }
 
-  dst[j] = '\0';
-  return dst;
+  // remove leading spaces
+  while (src && *src && isspace(*src))
+    src++;
+
+  // remove trailing spaces
+  len = strlen(src);
+  while (isspace(src[len - 1]))
+    len--;
+
+  dst = malloc(len + 1);
+  if (! dst)
+    {
+      ret = -1;
+      // log?
+      goto end;
+    }
+
+  strncpy(dst, src, len);
+  dst[len] = 0;
+
+  ret = 0;
+ end:
+  if (dstp)
+    *dstp = dst;
+
+  return ret;
 }
-
 
 int slashdot(char * p, char old, char new) {
   int warned = 1;
@@ -123,7 +128,7 @@ int sysctl_read(user_data_t *user_data)
   char *tmpname = (char *)malloc(strlen(st->name) + strlen(PROC_PATH) +2);
   char *tmpout = (char *)malloc(MAX_BUF);
   char *trimmed, *token = NULL;
-  int i = 0;
+  int i = 0, ret;
 
   strcpy(tmpname, PROC_PATH);
   strcat(tmpname, st->name);
@@ -148,8 +153,8 @@ int sysctl_read(user_data_t *user_data)
         fs.file-nr = 3424       0       610991
       so we want to split the fields accordingly
     */
-    trimmed = trim(tmpout);
-    if (trimmed == NULL)
+    ret = trim(tmpout, &trimmed);
+    if (ret != 0)
     {
       WARNING("could not process string");
       return 1;
@@ -168,9 +173,9 @@ int sysctl_read(user_data_t *user_data)
     WARNING("Reading %s failed", tmpname);
     return 1;
   }
-  free(tmpname);
-  free(tmpout);
-  free(trimmed);
+  sfree(tmpname);
+  sfree(tmpout);
+  sfree(trimmed);
   fclose(fp);
 #endif
 
@@ -292,10 +297,9 @@ static int sysctl_config (oconfig_item_t *ci)
     oconfig_item_t *child = ci->children + i;
 
     if (strcasecmp ("Instance", child->key) == 0)
-    {
       config_add_instance (child);
+    else if (strcasecmp ("Index", child->key) == 0)
       have_instance_block = 1;
-    }
     else if (!have_instance_block)
     {
       /* Non-instance option: Assume legacy configuration (without <Instance />
