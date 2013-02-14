@@ -150,9 +150,9 @@ int sysctl_read(user_data_t *user_data)
 #define MAX_BUF 4096
   FILE *fp;
   struct stat ts;
-  char *tmpname = (char *)malloc(strlen(st->name) + strlen(PROC_PATH) +2);
-  char *tmpout = (char *)malloc(MAX_BUF);
-  char *trimmed, *token = NULL;
+  char *tmpname = malloc(strlen(st->name) + strlen(PROC_PATH) +2);
+  char *tmpout = malloc(MAX_BUF);
+  char *trimmed=NULL, *token = NULL, *tmp_buf;
   int i = 0, ret;
 
   strcpy(tmpname, PROC_PATH);
@@ -160,14 +160,14 @@ int sysctl_read(user_data_t *user_data)
   slashdot(tmpname + strlen(PROC_PATH), '.', '/');
 
   if (stat(tmpname, &ts) < 0) {
-    WARNING("could not stat %s.", tmpname);
+    WARNING("could not stat %s : %s", tmpname, strerror(errno));
     return 1;
   }
 
   fp = fopen(tmpname, "r");
   if (!fp)
   {
-    WARNING("could not open %s for reading", tmpname);
+    WARNING("could not open %s for reading : %s", tmpname, strerror(errno));
     return 1;
   }
   if (fgets(tmpout, MAX_BUF, fp)) {
@@ -185,13 +185,22 @@ int sysctl_read(user_data_t *user_data)
       return 1;
     }
 
+    tmp_buf = trimmed;
     while(i < st->index)
     {
-      token = strsep(&trimmed, " ");
+      token = strsep(&tmp_buf, " ");
       i++;
     }
 
-    sysctl_value = atoi(token);
+    if (token != NULL)
+    {
+      sysctl_value = atoi(token);
+    }
+    else
+    {
+      WARNING("called atoi() on NULL; failing");
+      return 1;
+    }
   }
   else
   {
