@@ -280,10 +280,9 @@ static int config_add_instance(oconfig_item_t *ci)
     oconfig_item_t *child = ci->children + i;
 
     if (strcasecmp ("Key", child->key) == 0)
-    {
       status = cf_util_get_string (child, &st->name);
+    else if (strcasecmp ("Index", child->key) == 0)
       status = cf_util_get_int (child, &st->index);
-    }
     else
     {
       WARNING ("sysctl plugin: Option `%s' not allowed here.",
@@ -322,9 +321,10 @@ static int sysctl_config (oconfig_item_t *ci)
     oconfig_item_t *child = ci->children + i;
 
     if (strcasecmp ("Instance", child->key) == 0)
+    {
       config_add_instance (child);
-    else if (strcasecmp ("Index", child->key) == 0)
       have_instance_block = 1;
+    }
     else if (!have_instance_block)
     {
       /* Non-instance option: Assume legacy configuration (without <Instance />
