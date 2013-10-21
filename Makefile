@@ -1,7 +1,7 @@
 PLUGINDIR=${PREFIX}/lib/collectd
-INCLUDEDIR=/usr/include/collectd/ ${EXTRA_INCLUDE}
+INCLUDEDIR=-I/usr/include/collectd/ -I/usr/include/collectd/core ${EXTRA_INCLUDE}
 
-CFLAGS=-I${INCLUDEDIR} -Wall -Werror -g -O2
+CFLAGS=${INCLUDEDIR} -Wall -Werror -g -O2
 
 all:
 	${CC} -DHAVE_CONFIG_H ${CFLAGS} -c sysctl.c  -fPIC -DPIC -o sysctl.o
