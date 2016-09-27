@@ -243,7 +243,7 @@ static int sysctl_add_read_callback (struct sysctl_t *st)
   status = plugin_register_complex_read (/* group = */ "sysctl",
       /* name      = */ callback_name,
       /* callback  = */ sysctl_read,
-      /* interval  = */ NULL,
+      /* interval  = */ 0,
       /* user_data = */ &ud);
   return (status);
 } /* int sysctl_add_read_callback */
